@@ -8,9 +8,11 @@
 
 import UIKit
 
-class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating {
+    
     
     var businesses: [Business]!
+    var searchController: UISearchController!
     
     @IBOutlet weak var tableView: UITableView!
     
@@ -19,8 +21,25 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         
         tableView.delegate = self
         tableView.dataSource = self
-
+        tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 120
+        
+        // Initializing with searchResultsController set to nil means that
+        // searchController will use this view controller to display the search results
+        searchController = UISearchController(searchResultsController: nil)
+        searchController.searchResultsUpdater = self
+        
+        // If we are using this same view controller to present the results
+        // dimming it out wouldn't make sense. Should probably only set
+        // this to yes if using another controller to display the search results.
+        searchController.dimsBackgroundDuringPresentation = false
+        
+        searchController.searchBar.sizeToFit()
+        tableView.tableHeaderView = searchController.searchBar
+        
+        // Sets this view controller as presenting view controller for the search interface
+        definesPresentationContext = true
+        
         
         Business.searchWithTerm(term: "Thai", completion: { (businesses: [Business]?, error: Error?) -> Void in
             
@@ -49,6 +68,17 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
          */
         
     }
+
+    
+    func updateSearchResults(for searchController: UISearchController){
+        if let searchText = searchController.searchBar.text {
+            businesses = searchText.isEmpty ? businesses: businesses.filter({ (business) -> Bool in
+                return (business.name?.lowercased().contains(searchText.lowercased()))!
+            })
+            self.tableView.reloadData()
+        }
+    }
+    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
